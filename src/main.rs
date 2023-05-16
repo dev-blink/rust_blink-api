@@ -51,6 +51,8 @@ async fn route_ship(Path(raw_colour): Path<String>, State(state): State<Arc<AppS
 
     let before_req = Instant::now();
 
+
+    // Input validation
     let colour: u32 = match raw_colour.parse() {
         Ok(c) => c,
         Err(_) => {
@@ -65,25 +67,25 @@ async fn route_ship(Path(raw_colour): Path<String>, State(state): State<Arc<AppS
 
     let uri: String = format!("assets/ships/{}.png", colour);
 
-    //match state.client.object().read(BUCKET_NAME, &uri).await {
-    //    Ok(_) => {
-    //        return ok(json!({
-    //            "url": fqd(uri)
-    //        }))
-    //    },
-    //    Err(_) => {},
-    //}
+    // if it already exists return bucket link
+    match state.client.object().read(BUCKET_NAME, &uri).await {
+        Ok(_) => {
+            return ok(json!({
+                "url": fqd(uri),
+                "new": false
+            }))
+        },
+        Err(_) => {},
+    }
 
-    let buffsize: usize;
 
     let default: Vec<u8> = if let Ok(buf) = state.client.object().download(BUCKET_NAME, "assets/ship.png").await {
-        buffsize = buf.len();
         buf
     } else {
         return err("cdn currently unavailable", StatusCode::INTERNAL_SERVER_ERROR);
     };
 
-    let mut buf: Vec<u8> = Vec::with_capacity(buffsize);
+    let mut buf: Vec<u8> = Vec::with_capacity(default.len());
 
     let mut img: image::DynamicImage = ImgReader::new(Cursor::new(default)).with_guessed_format().unwrap().decode().unwrap();
 
@@ -97,11 +99,15 @@ async fn route_ship(Path(raw_colour): Path<String>, State(state): State<Arc<AppS
     
     let before_modify = Instant::now();
 
-    img.as_mut_rgba8().unwrap().as_raw_mut().par_chunks_mut(4).for_each(|px| {
-        if px[3] != 0x00 {
-            px[0..3].clone_from_slice(&recolour);
-        }
-    });
+
+    img = tokio::task::spawn_blocking(move || {
+        img.as_mut_rgba8().unwrap().as_raw_mut().par_chunks_mut(4).for_each(|px| {
+            if px[3] != 0x00 {
+                px[0..3].clone_from_slice(&recolour);
+            }
+        });
+        img
+    }).await.unwrap();
 
     let modify_time: std::time::Duration = Instant::now() - before_modify;
 
