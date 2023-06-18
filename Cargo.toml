@@ -6,9 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = "0.6.18"
+axum = {version = "0.6.18", features=["headers"]}
 tokio = {version = "1.25.0", features = ["full"]}
 serde_json = "1.0.96"
 cloud-storage = {version = "0.11.1", default-features = false, features=["rustls-tls"]}
 image = {git="https://github.com/aaix/image-rs.git"}
 rayon = "1.7.0"
+rand = "0.8.5"
