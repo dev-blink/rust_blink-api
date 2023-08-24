@@ -56,6 +56,7 @@ async fn check_auth<B>(
     if auth.0.token == API_TOKEN {
         Ok(next.run(request).await)
     } else {
+        println!("Failed auth with '{}'", auth.0.token);
         Err(err("bad authentication", StatusCode::UNAVAILABLE_FOR_LEGAL_REASONS))
     }
 }
