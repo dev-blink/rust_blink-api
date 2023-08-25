@@ -17,4 +17,16 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build
-      run: cargo build --verbose --release
+      run: cargo build --release
+    
+  upload:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/upload-artifact@v3
+      name: "Upload artifacts"
+      with:
+        name: latest
+        path: target/release/rust_api
+        retention-days: 7
+
