@@ -13,3 +13,4 @@ cloud-storage = {version = "0.11.1", default-features = false, features=["rustls
 image = {git="https://github.com/aaix/image-rs.git"}
 rayon = "1.7.0"
 rand = "0.8.5"
+lazy_static = "1.4.0"
