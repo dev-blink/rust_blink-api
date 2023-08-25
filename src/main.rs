@@ -2,7 +2,7 @@ use axum::{
     routing::get,
     response::{Json, Response},
     extract::TypedHeader,
-    headers::authorization::{Authorization, Basic, Credentials},
+    headers::authorization::{Authorization, Credentials},
     Router, extract::{Path, State}, http::{StatusCode, Request}, middleware::Next,
 };
 
@@ -20,10 +20,10 @@ const HUG_GIF: [&str; 38] = ["0423dad9-6128-4a28-9517-26533ec6e6b9.gif", "09a216
 
 
 lazy_static! {
-    static ref API_TOKEN: &str = {
+    static ref API_TOKEN: String = {
         match std::fs::read_to_string("TOKEN") {
             Ok(file) => {
-                file.trim_end_matches('\n')
+                (*file.trim_end_matches('\n')).to_owned()
             }
             Err(why) => {
                 panic!("Couldn't open ./TOKEN file, {}", why);
@@ -65,7 +65,7 @@ async fn check_auth<B>(
     request: Request<B>,
     next: Next<B>,
 ) -> Result<Response, (StatusCode, Json<Value>)> {
-    if auth.0.token == API_TOKEN {
+    if API_TOKEN.eq(&auth.0.token) {
         Ok(next.run(request).await)
     } else {
         println!("Failed auth with '{}'", auth.0.token);
@@ -78,8 +78,6 @@ async fn check_auth<B>(
 async fn main() {
 
     println!("Starting :D");
-
-    println!("bundled auth is '{}'", API_TOKEN);
 
     let client: Client = Client::new();
     let bucket = client.bucket().read(BUCKET_NAME).await.expect("unable to connect to cdn");
