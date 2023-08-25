@@ -33,12 +33,13 @@ lazy_static! {
 }
 
 
+const BUCKET_NAME: &'static str = "cdn.blinkbot.me";
+
 struct AppState {
     client:Client,
     bucket: Bucket,
 }
 
-const BUCKET_NAME: &'static str = "cdn.blinkbot.me";
 
 struct RawToken {
     token: String
@@ -133,7 +134,7 @@ async fn route_ship(Path(raw_colour): Path<String>, State(state): State<Arc<AppS
     };
 
     if colour > 0xFFFFFF {
-        return err("colour out of bounds (greater than 0xFFFFFF", StatusCode::BAD_GATEWAY);
+        return err("colour out of bounds (greater than 0xFFFFFF", StatusCode::BAD_REQUEST);
     }
 
 
@@ -197,6 +198,7 @@ async fn route_ship(Path(raw_colour): Path<String>, State(state): State<Arc<AppS
     }))
 }
 
+#[inline]
 fn response(success: bool, code: StatusCode, data: Value) -> (StatusCode, Json<Value>) {
     (
         code,
@@ -207,13 +209,16 @@ fn response(success: bool, code: StatusCode, data: Value) -> (StatusCode, Json<V
     )
 }
 
+#[inline]
 fn ok(data: Value) -> (StatusCode, Json<Value>) {
     response(true, StatusCode::OK, data)
 }
 
+#[inline]
 fn err(message: &str, code: StatusCode) -> (StatusCode, Json<Value>) {
     response(false, code, json!({"message":message}))
 }
+#[inline]
 
 fn fqd(uri: String) -> String {
     format!("https://{}/{}", BUCKET_NAME, uri)
